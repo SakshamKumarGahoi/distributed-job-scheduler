@@ -1,8 +1,11 @@
 const prisma = require("../config/prisma");
 const AppError = require("../utils/AppError");
 
+/**
+ * Create Queue
+ */
 async function createQueue(userId, data) {
-
+  // Verify the project belongs to the logged-in user
   const project = await prisma.project.findFirst({
     where: {
       id: data.projectId,
@@ -10,22 +13,49 @@ async function createQueue(userId, data) {
     },
   });
 
-  if (!project)
+  if (!project) {
     throw new AppError("Project not found", 404);
+  }
 
-  return prisma.queue.create({
-    data: {
-      projectId: data.projectId,
-      name: data.name,
-      concurrencyLimit: data.concurrencyLimit,
-      retryPolicyId: data.retryPolicyId,
+  // Reuse an existing retry policy if one matches
+  let retryPolicy = await prisma.retryPolicy.findFirst({
+    where: {
+      strategy: data.retryPolicy.strategy,
+      baseDelayMs: data.retryPolicy.baseDelayMs,
+      maxRetries: data.retryPolicy.maxRetries,
     },
   });
 
+  // Otherwise create it
+  if (!retryPolicy) {
+    retryPolicy = await prisma.retryPolicy.create({
+      data: {
+        strategy: data.retryPolicy.strategy,
+        baseDelayMs: data.retryPolicy.baseDelayMs,
+        maxRetries: data.retryPolicy.maxRetries,
+      },
+    });
+  }
+
+  // Create queue
+  return prisma.queue.create({
+    data: {
+      name: data.name,
+      projectId: data.projectId,
+      concurrencyLimit: data.concurrencyLimit,
+      retryPolicyId: retryPolicy.id,
+    },
+    include: {
+      project: true,
+      retryPolicy: true,
+    },
+  });
 }
 
+/**
+ * Get all queues of the logged-in user
+ */
 async function getQueues(userId) {
-
   return prisma.queue.findMany({
     where: {
       project: {
@@ -40,11 +70,12 @@ async function getQueues(userId) {
       createdAt: "desc",
     },
   });
-
 }
 
+/**
+ * Get single queue
+ */
 async function getQueue(userId, queueId) {
-
   const queue = await prisma.queue.findFirst({
     where: {
       id: queueId,
@@ -53,19 +84,22 @@ async function getQueue(userId, queueId) {
       },
     },
     include: {
+      project: true,
       retryPolicy: true,
     },
   });
 
-  if (!queue)
+  if (!queue) {
     throw new AppError("Queue not found", 404);
+  }
 
   return queue;
-
 }
 
+/**
+ * Update queue
+ */
 async function updateQueue(userId, queueId, data) {
-
   await getQueue(userId, queueId);
 
   return prisma.queue.update({
@@ -73,12 +107,17 @@ async function updateQueue(userId, queueId, data) {
       id: queueId,
     },
     data,
+    include: {
+      project: true,
+      retryPolicy: true,
+    },
   });
-
 }
 
+/**
+ * Pause queue
+ */
 async function pauseQueue(userId, queueId) {
-
   await getQueue(userId, queueId);
 
   return prisma.queue.update({
@@ -89,11 +128,12 @@ async function pauseQueue(userId, queueId) {
       isPaused: true,
     },
   });
-
 }
 
+/**
+ * Resume queue
+ */
 async function resumeQueue(userId, queueId) {
-
   await getQueue(userId, queueId);
 
   return prisma.queue.update({
@@ -104,7 +144,6 @@ async function resumeQueue(userId, queueId) {
       isPaused: false,
     },
   });
-
 }
 
 module.exports = {
