@@ -66,3 +66,14 @@ exports.resume = asyncHandler(async (req, res) => {
   ApiResponse.success(res, queue, "Queue resumed");
 
 });
+
+exports.stats = asyncHandler(async (req, res) => {
+
+  const stats = await queueService.getQueueStats(
+    req.user.id,
+    req.params.id
+  );
+
+  ApiResponse.success(res, stats);
+
+});

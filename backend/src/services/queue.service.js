@@ -146,11 +146,54 @@ async function resumeQueue(userId, queueId) {
   });
 }
 
+async function getQueueStats(userId, queueId) {
+
+  const queue = await prisma.queue.findFirst({
+    where: {
+      id: queueId,
+      project: {
+        userId,
+      },
+    },
+  });
+
+  if (!queue) {
+    throw new AppError("Queue not found", 404);
+  }
+
+  const grouped = await prisma.job.groupBy({
+    by: ["status"],
+    where: {
+      queueId,
+    },
+    _count: {
+      status: true,
+    },
+  });
+
+  const stats = {
+    QUEUED: 0,
+    SCHEDULED: 0,
+    CLAIMED: 0,
+    RUNNING: 0,
+    COMPLETED: 0,
+    FAILED: 0,
+    DEAD: 0,
+  };
+
+  grouped.forEach((row) => {
+    stats[row.status] = row._count.status;
+  });
+
+  return stats;
+}
+
 module.exports = {
-  createQueue,
-  getQueues,
-  getQueue,
-  updateQueue,
-  pauseQueue,
-  resumeQueue,
-};
+    createQueue,
+    getQueues,
+    getQueue,
+    updateQueue,
+    pauseQueue,
+    resumeQueue,
+    getQueueStats
+}

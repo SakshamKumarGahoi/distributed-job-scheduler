@@ -94,8 +94,37 @@ async function getJob(userId, jobId) {
   return job;
 }
 
+async function getJobLogs(userId, jobId) {
+
+  const job = await prisma.job.findFirst({
+    where: {
+      id: jobId,
+      queue: {
+        project: {
+          userId,
+        },
+      },
+    },
+  });
+
+  if (!job) {
+    throw new AppError("Job not found", 404);
+  }
+
+  return prisma.jobLog.findMany({
+    where: {
+      jobId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+}
+
 module.exports = {
-  createJob,
-  getJobs,
-  getJob,
+    createJob,
+    getJobs,
+    getJob,
+    getJobLogs,
 };

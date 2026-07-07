@@ -32,3 +32,14 @@ exports.getOne = asyncHandler(async (req, res) => {
 
   ApiResponse.success(res, job);
 });
+
+exports.logs = asyncHandler(async (req, res) => {
+
+  const logs = await jobService.getJobLogs(
+    req.user.id,
+    req.params.id
+  );
+
+  ApiResponse.success(res, logs);
+
+});

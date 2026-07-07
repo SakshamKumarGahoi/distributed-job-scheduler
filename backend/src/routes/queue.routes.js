@@ -20,6 +20,11 @@ router.post(
 
 router.get("/", controller.getAll);
 
+router.get(
+    "/:id/stats",
+    controller.stats
+  );
+
 router.get("/:id", controller.getOne);
 
 router.patch(
@@ -27,6 +32,7 @@ router.patch(
   validate(updateQueueSchema),
   controller.update
 );
+
 
 router.patch("/:id/pause", controller.pause);
 

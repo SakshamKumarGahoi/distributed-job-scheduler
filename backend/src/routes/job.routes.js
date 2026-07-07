@@ -24,6 +24,8 @@ router.get(
   controller.getAll
 );
 
+router.get("/jobs/:id/logs", controller.logs);
+
 // Get One Job
 router.get(
   "/jobs/:id",
