@@ -1,1 +1,19 @@
-// StatCard.jsx
+export default function StatCard({ title, value }) {
+  return (
+    <div className="bg-white rounded-xl shadow p-6">
+
+      <h2 className="text-gray-500 text-sm">
+
+        {title}
+
+      </h2>
+
+      <p className="text-4xl font-bold mt-3 text-slate-800">
+
+        {value}
+
+      </p>
+
+    </div>
+  );
+}
